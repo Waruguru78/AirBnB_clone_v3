@@ -13,7 +13,7 @@ from models.state import State
 from models.user import User
 from os import getenv
 import sqlalchemy
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 classes = {"Amenity": Amenity, "City": City,
@@ -74,3 +74,35 @@ class DBStorage:
     def close(self):
         """call remove() method on the private session attribute"""
         self.__session.remove()
+    
+    def get(self, cls, id):
+        """
+            Method to retrieve one object from db
+            Args:
+                cls (str): string representation of class to query
+                id (str): id of object
+            Returns:
+                object that matches query otherwise None
+        """
+        if cls not in models.classes.keys():
+            return None
+
+        cls = models.classes[cls]
+
+        try:
+            return self.__session.query(cls).filter_by(id=id).one_or_none()
+        except MultipleResultsFound:
+            return None
+
+    def count(self, cls=None):
+        """
+            Returns the number of objects in storage matching the given class
+        """
+        if cls is None:
+            return len(models.storage.all("").values())
+        elif cls not in models.classes.keys():
+            return 0
+        else:
+            return len(models.storage.all(cls).values())
+
+
